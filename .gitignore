@@ -1,0 +1,39 @@
+# Byte-compiled
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual env
+.venv/
+venv/
+ENV/
+
+# Secrets
+.env
+.env.local
+config.json
+
+# Test artifacts
+.pytest_cache/
+allure-results/
+allure-report/
+test-results/
+playwright-report/
+htmlcov/
+.coverage
+*.cover
+videos/
+traces/
+screenshots/
+records/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.tmp
+
+# Local AI tooling
+.claude/
+.cursor/settings.local.json
