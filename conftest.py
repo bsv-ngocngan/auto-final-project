@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import allure
 import pytest
@@ -11,15 +12,28 @@ from pages.ticket_list_page import TicketListPage
 
 load_dotenv()
 
-def _env(name: str, default: str) -> str:
+DEFAULT_BASE_URL = "https://bsv-nhungnguyen.github.io/bai_tap_17082026.html"
+
+
+def _env(name: str, default: str = "") -> str:
     return os.getenv(name, "").strip() or default
 
 
-BASE_URL = _env("BASE_URL", "https://bsv-nhungnguyen.github.io/bai_tap_17082026.html")
-ADMIN_ID = _env("ADMIN_ID", "admin")
-ADMIN_PASSWORD = _env("ADMIN_PASSWORD", "admin123")
-GUEST_ID = _env("GUEST_ID", "guest")
-GUEST_PASSWORD = _env("GUEST_PASSWORD", "guest123")
+def _require_env(name: str) -> str:
+    """Read a required value from .env / environment. Fail clearly when missing."""
+    value = _env(name)
+    if not value:
+        pytest.fail(
+            f"Missing environment variable '{name}'. "
+            "Copy .env.example to .env and fill in the account info.",
+            pytrace=False,
+        )
+    return value
+
+
+BASE_URL = _env("BASE_URL", DEFAULT_BASE_URL)
+###NNTT: không nên hardcode account info trong code, nên để trong file .env và load vào.
+###NNTT: ví dụ:ADMIN_ID = os.getenv("ADMIN_ID")
 
 
 def pytest_configure(config) -> None:
@@ -36,17 +50,51 @@ def pytest_configure(config) -> None:
 def pytest_runtest_makereport(item, call):
     outcome = yield
     report = outcome.get_result()
-    if report.when != "call" or report.passed:
-        return
+
+    if report.when == "call":
+        item.rep_call = report
+        _attach_screenshot(item, report)
+    elif report.when == "teardown":
+        _attach_video_if_failed(item)
+
+
+def _attach_screenshot(item, report) -> None:
+    """Attach a screenshot to Allure for every test (passed and failed)."""
     page = item.funcargs.get("page")
     if page is None:
         return
-    allure.attach(
-        page.screenshot(full_page=True),
-        name="failure-screenshot",
-        attachment_type=allure.attachment_type.PNG,
-    )
+    status = "passed" if report.passed else "failed"
+    try:
+        allure.attach(
+            page.screenshot(full_page=True),
+            name=f"screenshot-{status}",
+            attachment_type=allure.attachment_type.PNG,
+        )
+    except Exception as exc:  # page may already be closed / crashed
+        allure.attach(str(exc), name="screenshot-error", attachment_type=allure.attachment_type.TEXT)
 
+
+def _attach_video_if_failed(item) -> None:
+    """Attach the recorded video to Allure when the test failed.
+
+    pytest-playwright (``--video=retain-on-failure`` in pytest.ini) saves the
+    video into ``output_path`` while tearing down the browser context, so the
+    file is only available at the teardown report.
+    """
+    rep_call = getattr(item, "rep_call", None)
+    if rep_call is None or not rep_call.failed:
+        return
+    output_path = (item.funcargs or {}).get("output_path")
+    if not output_path:
+        return
+    for video in sorted(Path(output_path).glob("video*.webm")):
+        allure.attach.file(
+            str(video),
+            name=f"failure-{video.stem}",
+            attachment_type=allure.attachment_type.WEBM,
+        )
+
+###NNTT: hàm chụp hình nên hoạt động cả khi passed, không chỉ khi fail. Nếu được nên tạo thêm điều kiện quay video khi testcase failed.
 
 @pytest.fixture(scope="session")
 def base_url() -> str:
@@ -55,12 +103,12 @@ def base_url() -> str:
 
 @pytest.fixture
 def admin_account() -> tuple[str, str]:
-    return ADMIN_ID, ADMIN_PASSWORD
+    return _require_env("ADMIN_ID"), _require_env("ADMIN_PASSWORD")
 
 
 @pytest.fixture
 def guest_account() -> tuple[str, str]:
-    return GUEST_ID, GUEST_PASSWORD
+    return _require_env("GUEST_ID"), _require_env("GUEST_PASSWORD")
 
 
 @pytest.fixture

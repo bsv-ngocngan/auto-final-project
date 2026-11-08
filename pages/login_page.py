@@ -2,18 +2,20 @@ import allure
 from playwright.sync_api import Locator, Page, expect
 
 from pages.base_page import BasePage
+from pages.locators import LoginLocators as L
 
 
 class LoginPage(BasePage):
     def __init__(self, page: Page) -> None:
         super().__init__(page)
-        self.section: Locator = page.locator("#login_section")
-        self.id_input: Locator = page.get_by_label("ID")
-        self.password_input: Locator = page.get_by_label("パスワード")
-        self.login_button: Locator = page.get_by_role("button", name="ログイン", exact=True)
-        self.heading: Locator = page.get_by_role("heading", name="ログイン")
-        self.error_message: Locator = page.get_by_text("IDまたはパスワードが正しくありません。")
-        self.main_section: Locator = page.locator("#main_section")
+        self.section: Locator = page.locator(L.SECTION)
+        self.id_input: Locator = page.get_by_label(L.ID_INPUT_LABEL)
+        self.password_input: Locator = page.get_by_label(L.PASSWORD_INPUT_LABEL)
+        self.login_button: Locator = page.get_by_role("button", name=L.LOGIN_BUTTON_NAME, exact=True)
+        self.heading: Locator = page.get_by_role("heading", name=L.HEADING_NAME)
+        self.error_message: Locator = page.get_by_text(L.ERROR_MESSAGE_TEXT)
+        self.main_section: Locator = page.locator(L.MAIN_SECTION)
+    ### NNTT: nên có file locators.py để lưu các locator, tránh hardcode trong page object để dễ maintain.
 
     @allure.step("Open login page")
     def open(self, url: str) -> None:

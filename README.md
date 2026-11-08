@@ -11,8 +11,11 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 playwright install chromium
-cp .env.example .env
+cp .env.example .env   # rồi điền ADMIN_ID / ADMIN_PASSWORD / GUEST_ID / GUEST_PASSWORD
 ```
+
+Account info chỉ được lưu trong `.env` (đã nằm trong `.gitignore`), không hardcode trong code / tài liệu.
+Trên CI, các giá trị này lấy từ GitHub Secrets.
 
 ## Run
 
@@ -38,3 +41,33 @@ HEADED=true pytest -k test_gd01_002_login_screen
 | GD03.2-01 | `test_gd03_2_01_iframe_apply_status` |
 | GD03.3-04 | `test_gd03_3_04_open_manual_new_tab` |
 | GD02.1-01 | `test_gd02_1_01_empty_result_opens_create_modal` |
+
+###NNTT: không ghi hướng dẫn open allure report 
+1- Open bằng lệnh ở terminal: allure generate allure-results --clean --single-file -o allure-report
+open allure-report/index.html
+
+2 - Tạo file run_test.sh để có thể tự mở allure-report sau khi run. 
+
+## Allure report
+
+Yêu cầu Allure CLI (macOS: `brew install allure`).
+
+### Cách 1: chạy lệnh thủ công
+
+```bash
+pytest
+allure generate allure-results --clean --single-file -o allure-report
+open allure-report/index.html
+```
+
+### Cách 2: dùng `run_test.sh` (chạy test + tự mở report)
+
+```bash
+chmod +x run_test.sh
+./run_test.sh                                   # chạy toàn bộ
+./run_test.sh -k test_gd01_002_login_screen     # truyền thêm tham số cho pytest
+```
+
+Mỗi testcase đều được đính kèm screenshot (cả passed và failed). Khi testcase failed,
+video (`--video=retain-on-failure`) và trace sẽ được giữ lại và video được đính kèm vào Allure.
+

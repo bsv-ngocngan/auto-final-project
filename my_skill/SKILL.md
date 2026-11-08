@@ -14,5 +14,8 @@
 - `ensure_notification_exists` searches, opens that button only when missing, then creates.
 
 ## Accounts
-- admin / admin123
-- guest / guest123
+- Account info (admin / guest) được load từ `.env` (`ADMIN_ID`, `ADMIN_PASSWORD`, `GUEST_ID`, `GUEST_PASSWORD`).
+- Xem `.env.example` để biết các key cần khai báo. Không ghi ID / password vào file này.
+
+###NNTT: không để account info ở đây. 
+
